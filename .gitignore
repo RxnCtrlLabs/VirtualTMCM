@@ -38,6 +38,9 @@ hs_err_pid*
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 
+# Bluecove lib
+!libs/bluecove-2.1.2.jar
+
 # Gradle:
 !gradle/wrapper/gradle-wrapper.jar
 
