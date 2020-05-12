@@ -2,11 +2,7 @@ package com.rxnctrllabs.trinamic.receiving.command;
 
 import com.rxnctrllabs.trinamic.command.TrinamicCommand;
 import com.rxnctrllabs.trinamic.command.calculation.CalculationCommand;
-import com.rxnctrllabs.trinamic.command.control.CompareCommand;
-import com.rxnctrllabs.trinamic.command.control.JumpAlwaysCommand;
-import com.rxnctrllabs.trinamic.command.control.JumpConditionalCommand;
-import com.rxnctrllabs.trinamic.command.control.StopProgramCommand;
-import com.rxnctrllabs.trinamic.command.control.WaitCommand;
+import com.rxnctrllabs.trinamic.command.control.*;
 import com.rxnctrllabs.trinamic.command.io.GetInputCommand;
 import com.rxnctrllabs.trinamic.command.io.SetOutputCommand;
 import com.rxnctrllabs.trinamic.command.motion.MoveToPositionCommand;
@@ -21,11 +17,7 @@ import com.rxnctrllabs.trinamic.command.parameter.global.GetGlobalParameterComma
 import com.rxnctrllabs.trinamic.command.parameter.global.RestoreGlobalParameterCommand;
 import com.rxnctrllabs.trinamic.command.parameter.global.SetGlobalParameterCommand;
 import com.rxnctrllabs.trinamic.command.parameter.global.StoreGlobalParameterCommand;
-import com.rxnctrllabs.trinamic.command.script.ExitDownloadModeCommand;
-import com.rxnctrllabs.trinamic.command.script.ResetApplicationCommand;
-import com.rxnctrllabs.trinamic.command.script.RunApplicationCommand;
-import com.rxnctrllabs.trinamic.command.script.StartDownloadModeCommand;
-import com.rxnctrllabs.trinamic.command.script.StopApplicationCommand;
+import com.rxnctrllabs.trinamic.command.script.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,13 +75,15 @@ public class IncomingCommandHandler {
 
         COMMAND_BUILDER_MAP.put(TrinamicCommand.STOP_APP, (typeNumber, motorNumber, value) -> new StopApplicationCommand());
 
-        COMMAND_BUILDER_MAP.put(TrinamicCommand.RUN_APP, (typeNumber, motorNumber, value) -> new RunApplicationCommand());
+        COMMAND_BUILDER_MAP.put(TrinamicCommand.RUN_APP, (typeNumber, motorNumber, value) -> new RunApplicationCommand(value));
 
         COMMAND_BUILDER_MAP.put(TrinamicCommand.RESET_APP, (typeNumber, motorNumber, value) -> new ResetApplicationCommand());
 
         COMMAND_BUILDER_MAP.put(TrinamicCommand.START_DL_MODE, (typeNumber, motorNumber, value) -> new StartDownloadModeCommand());
 
         COMMAND_BUILDER_MAP.put(TrinamicCommand.EXIT_DL_MODE, (typeNumber, motorNumber, value) -> new ExitDownloadModeCommand());
+
+        COMMAND_BUILDER_MAP.put(TrinamicCommand.APP_STATUS, (typeNumber, motorNumber, value) -> new ApplicationStatusCommand());
     }
 
     private final List<Integer> receivedBytes;
@@ -109,6 +103,7 @@ public class IncomingCommandHandler {
     }
 
     public void addByte(final int incomingByte) {
+        System.out.printf("Received byte: %02X; ", incomingByte & 0xFF);
         this.receivedBytes.add(incomingByte & 0xFF);
 
         checkCompleteCommand();
@@ -120,14 +115,24 @@ public class IncomingCommandHandler {
 
     private void checkCompleteCommand() {
         if (this.receivedBytes.size() >= TrinamicCommand.COMMAND_LENGTH) {
+            System.out.println();
+
             List<Integer> fullCommand = new ArrayList<>(this.receivedBytes.subList(0, TrinamicCommand.COMMAND_LENGTH));
             this.receivedBytes.removeAll(fullCommand);
 
             TrinamicCommand receivedCommand = parseCommand(fullCommand);
 
-            Integer checksum = fullCommand.get(8);
-            if (receivedCommand != null && receivedCommand.getChecksum() == checksum) {
-                notifyCommandReceived(receivedCommand);
+            Integer expectedChecksum = fullCommand.get(8);
+            if (receivedCommand != null) {
+                if (receivedCommand.getChecksum() == expectedChecksum) {
+                    System.out.printf("Received command: %s%n", receivedCommand.toDatagramString());
+                    notifyCommandReceived(receivedCommand);
+                } else {
+                    System.out.printf("Bad checksum on command: %s%n", receivedCommand.toDatagramString());
+                    System.out.printf("Was: %d, expected: %d%n", receivedCommand.getChecksum(), expectedChecksum);
+                }
+            } else {
+                System.out.printf("Could not parse command: %s%n", fullCommand);
             }
         }
     }

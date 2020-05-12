@@ -1,12 +1,10 @@
 package com.rxnctrllabs.virtualtmcm;
 
-import com.rxnctrllabs.trinamic.command.ICommandVisitor;
+import com.intel.bluetooth.BluetoothConnectionAccess;
 import com.rxnctrllabs.trinamic.command.TrinamicCommand;
 import com.rxnctrllabs.trinamic.receiving.command.IncomingCommandHandler;
 import com.rxnctrllabs.trinamic.receiving.command.IncomingCommandHandlerObserver;
 import com.rxnctrllabs.trinamic.receiving.response.TrinamicResponse;
-import com.rxnctrllabs.virtualtmcm.parameterstore.AxisParameterStore;
-import com.rxnctrllabs.virtualtmcm.parameterstore.GlobalParameterStore;
 
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DiscoveryAgent;
@@ -19,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Optional;
+import java.util.Random;
 
 public class BluetoothCommunicationService implements IncomingCommandHandlerObserver {
 
@@ -109,12 +108,12 @@ public class BluetoothCommunicationService implements IncomingCommandHandlerObse
         @Override
         public void run() {
             setName("ConnectedThread");
-            System.out.println("Starting ConnectedThread");
+            System.out.println("Starting ConnectedThread\n");
 
             byte[] buffer = new byte[32];
             int numRead;
 
-            while (true) {
+            while (!((BluetoothConnectionAccess) this.connection).isClosed()) {
                 try {
                     numRead = this.inputStream.read(buffer);
                     for (int i = 0; i < numRead; i++) {
@@ -153,9 +152,9 @@ public class BluetoothCommunicationService implements IncomingCommandHandlerObse
 
     private final LocalDevice localDevice;
     private final IncomingCommandHandler incomingCommandHandler;
-    private final ICommandVisitor commandVisitor;
+    private final CommandIdentifier commandVisitor;
 
-    BluetoothCommunicationService(final LocalDevice localDevice, final IncomingCommandHandler incomingCommandHandler, final ICommandVisitor commandVisitor) {
+    BluetoothCommunicationService(final LocalDevice localDevice, final IncomingCommandHandler incomingCommandHandler, final CommandIdentifier commandVisitor) {
         this.commandVisitor = commandVisitor;
         this.currentState = ConnectionState.NONE;
 
@@ -168,30 +167,15 @@ public class BluetoothCommunicationService implements IncomingCommandHandlerObse
     public void notifyCommandReceived(final TrinamicCommand receivedCommand) {
         receivedCommand.accept(this.commandVisitor);
 
-        int type = receivedCommand.getType();
-        int commandNumber = receivedCommand.getCommandNumber();
+        TrinamicResponse response = this.commandVisitor.getNextResponse();
+        System.out.printf("Response: %s%n", response.toDatagramString());
 
-        Long value = 0L;
-        switch (commandNumber) {
-            case TrinamicCommand.SAP:
-            case TrinamicCommand.STAP:
-                AxisParameterStore.setAxisParameter(type, receivedCommand.getValue());
-                break;
-            case TrinamicCommand.SGP:
-            case TrinamicCommand.STGP:
-                GlobalParameterStore.setGlobalParameter(type, receivedCommand.getValue());
-                break;
-            case TrinamicCommand.GAP:
-                value = AxisParameterStore.getAxisParameter(type);
-                break;
-            case TrinamicCommand.GGP:
-                value = GlobalParameterStore.getGlobalParameter(type);
-                break;
+        if (shouldSendResponse(10)) {
+            System.out.printf("Sending response%n%n");
+            sendResponse(response);
+        } else {
+            System.out.printf("Not sending response%n%n");
         }
-
-        sendResponse(TrinamicResponseBuilder.from(receivedCommand)
-                .withValue(value)
-                .build());
     }
 
     synchronized void start() {
@@ -254,5 +238,14 @@ public class BluetoothCommunicationService implements IncomingCommandHandlerObse
             this.connectedThread.cancel();
             this.connectedThread = null;
         }
+    }
+
+    private boolean shouldSendResponse(int denominator) {
+        if (denominator == 0) {
+            return true;
+        }
+
+        denominator = (denominator > 1) ? denominator - 1 : 1;
+        return new Random().nextInt(denominator) != 0;
     }
 }

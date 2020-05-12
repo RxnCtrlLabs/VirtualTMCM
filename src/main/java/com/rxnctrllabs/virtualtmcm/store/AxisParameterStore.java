@@ -1,7 +1,9 @@
-package com.rxnctrllabs.virtualtmcm.parameterstore;
+package com.rxnctrllabs.virtualtmcm.store;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.rxnctrllabs.trinamic.command.parameter.axis.AxisParameter.*;
 
 public final class AxisParameterStore {
 
@@ -9,13 +11,13 @@ public final class AxisParameterStore {
 
     static {
         AXIS_PARAMETERS.put(0, 0L);
-        AXIS_PARAMETERS.put(1, 0L);
+        AXIS_PARAMETERS.put(ACTUAL_POSITION, 1520L);
         AXIS_PARAMETERS.put(2, 0L);
         AXIS_PARAMETERS.put(3, 0L);
-        AXIS_PARAMETERS.put(4, 1000L);
-        AXIS_PARAMETERS.put(5, 500L);
-        AXIS_PARAMETERS.put(6, 128L);
-        AXIS_PARAMETERS.put(7, 8L);
+        AXIS_PARAMETERS.put(MAX_POS_SPEED, 1000L);
+        AXIS_PARAMETERS.put(MAX_ACCELERATION, 500L);
+        AXIS_PARAMETERS.put(MAX_CURRENT, 128L);
+        AXIS_PARAMETERS.put(STANDBY_CURRENT, 8L);
         AXIS_PARAMETERS.put(8, 0L);
         AXIS_PARAMETERS.put(9, 0L);
         AXIS_PARAMETERS.put(10, 0L);
@@ -25,7 +27,7 @@ public final class AxisParameterStore {
         AXIS_PARAMETERS.put(130, 0L);
         AXIS_PARAMETERS.put(135, 0L);
         AXIS_PARAMETERS.put(138, 0L);
-        AXIS_PARAMETERS.put(140, 4L);
+        AXIS_PARAMETERS.put(MICROSTEP_RESOLUTION, 4L);
         AXIS_PARAMETERS.put(141, 0L);
         AXIS_PARAMETERS.put(149, 0L);
         AXIS_PARAMETERS.put(153, 0L);
@@ -64,6 +66,7 @@ public final class AxisParameterStore {
         AXIS_PARAMETERS.put(204, 0L);
         AXIS_PARAMETERS.put(206, 0L);
         AXIS_PARAMETERS.put(208, 0L);
+        AXIS_PARAMETERS.put(ENCODER_POSITION, 0L);
         AXIS_PARAMETERS.put(213, 0L);
         AXIS_PARAMETERS.put(214, 0L);
     }

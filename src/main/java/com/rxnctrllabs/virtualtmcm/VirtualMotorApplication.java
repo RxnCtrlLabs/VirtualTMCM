@@ -1,6 +1,5 @@
 package com.rxnctrllabs.virtualtmcm;
 
-import com.rxnctrllabs.trinamic.command.ICommandVisitor;
 import com.rxnctrllabs.trinamic.receiving.command.IncomingCommandHandler;
 
 import javax.bluetooth.BluetoothStateException;
@@ -22,7 +21,7 @@ public class VirtualMotorApplication {
         final LocalDevice localDevice = LocalDevice.getLocalDevice();
 
         final IncomingCommandHandler receivedCommandHandler = new IncomingCommandHandler();
-        final ICommandVisitor commandVisitor = new CommandIdentifier();
+        final CommandIdentifier commandVisitor = new CommandIdentifier();
 
         final BluetoothCommunicationService bluetoothCommunicationService = new BluetoothCommunicationService(localDevice, receivedCommandHandler, commandVisitor);
 
